@@ -1,4 +1,7 @@
-# Getting Started
+# API - Pokedex with WebFlux
+
+Projeto com Spring WebFlux para criação de uma API reativa com banco NoSQL.
+
 
 
 ### Técnologias
