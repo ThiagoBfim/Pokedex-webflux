@@ -9,7 +9,6 @@ import java.util.Objects;
 public class Pokemon {
     @Id
     private String id;
-
     private String nome;
     private String categoria;
     private String habilidades;

@@ -58,18 +58,9 @@ public class PokemonController {
 
     @DeleteMapping("{id}")
     public Mono<ResponseEntity<Void>> deletePokemon(@PathVariable(value = "id") String id) {
-        return repository.findById(id)
-                .flatMap(existingPokemon ->
-                        repository.delete(existingPokemon)
-                                .then(Mono.just(ResponseEntity.ok().<Void>build()))
-                )
+        return repository.deleteById(id)
+                .then(Mono.just(ResponseEntity.ok().<Void>build()))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
-    }
-
-    @DeleteMapping
-    @ResponseStatus(HttpStatus.OK)
-    public Mono<Void> deleteAllPokemons() {
-        return repository.deleteAll();
     }
 
     @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
