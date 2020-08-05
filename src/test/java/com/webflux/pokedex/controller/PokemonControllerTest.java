@@ -1,6 +1,7 @@
 package com.webflux.pokedex.controller;
 
 import com.webflux.pokedex.domain.Pokemon;
+import com.webflux.pokedex.domain.PokemonEvent;
 import com.webflux.pokedex.repository.PokemonRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,17 +11,19 @@ import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.web.reactive.server.FluxExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
+import java.time.Duration;
 import java.util.Collections;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.when;
 
-//@RunWith(SpringRunner.class)
 @ExtendWith(SpringExtension.class)
 @WebFluxTest(controllers = PokemonController.class)
 public class PokemonControllerTest {
@@ -90,12 +93,12 @@ public class PokemonControllerTest {
         when(repository.findById("123")).thenReturn(Mono.just(pokemonBefore));
         when(repository.save(pokemonUpdated)).thenReturn(Mono.just(pokemonUpdated));
 
-        webTestClient.post()
-                .uri("/pokemons")
+        webTestClient.put()
+                .uri("/pokemons/{id}", "123")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(pokemonUpdated))
                 .exchange()
-                .expectStatus().isCreated()
+                .expectStatus().isOk()
                 .expectBody(Pokemon.class)
                 .value(Pokemon::getId, equalTo("123"))
                 .value(Pokemon::getHabilidades, equalTo("Lança Chamas"));
@@ -118,6 +121,33 @@ public class PokemonControllerTest {
 
     @Test
     void getPokemonEvents() {
+
+        FluxExchangeResult<PokemonEvent> result = webTestClient.get().uri("/pokemons/events")
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .exchange()
+                .expectStatus().isOk()
+                .returnResult(PokemonEvent.class);
+
+
+        Flux<PokemonEvent> interval = result.getResponseBody();
+
+        StepVerifier.create(interval)
+                .expectSubscription()
+                .thenAwait(Duration.ofSeconds(1))
+                .expectNextCount(0)
+                .expectNext(new PokemonEvent(0L, "Product Event"))
+                .thenAwait(Duration.ofSeconds(1))
+                .expectNextCount(1)
+                .expectNext(new PokemonEvent(2L, "Product Event"))
+                .thenAwait(Duration.ofSeconds(1))
+                .expectNextCount(2).expectComplete();
+
+
+//        webTestClient.get().uri("/pokemons/events")
+//                .exchange()
+//                .expectStatus().isOk()
+//                .expectBodyList(PokemonEvent.class)
+//                .contains(new PokemonEvent(5L, "Product Event"));
     }
 
 
